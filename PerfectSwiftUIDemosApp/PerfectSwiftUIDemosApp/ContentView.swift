@@ -53,7 +53,7 @@ struct AnimationDemo: Identifiable {
     let id = UUID()
 
     let name: String
-    let createdAt: String
+    let createdAt: Date
 
     let description: LocalizedText
 
@@ -76,6 +76,16 @@ struct AnimationDemo: Identifiable {
 // MARK: - Animation Demo Data
 
 extension AnimationDemo {
+
+    // Catalog dates use Gregorian days in UTC so device settings cannot shift them.
+    private static func creationDate(year: Int, month: Int, day: Int) -> Date {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+        guard let date = calendar.date(from: DateComponents(year: year, month: month, day: day)) else {
+            preconditionFailure("Invalid demo creation date")
+        }
+        return date
+    }
 
     static let all: [AnimationDemo] = {
 
@@ -100,7 +110,7 @@ extension AnimationDemo {
 
             AnimationDemo(
                 name: "SwiftUI Animated App Theme Switcher - Xcode 27",
-                createdAt: "2026/11/7",
+                createdAt: creationDate(year: 2026, month: 11, day: 7),
 
                 description: [
                     .zhHans: "切换深色模式",
@@ -122,7 +132,7 @@ extension AnimationDemo {
                 ),
 
                 // 按实际资源依赖修改
-                requiresAssets: false,
+                requiresAssets: true,
 
                 tutorialText: tutorialText,
 
@@ -135,7 +145,7 @@ extension AnimationDemo {
 
             AnimationDemo(
                 name: "Chat Bubble TextField Transition Using SwiftUI | iOS 27 | Xcode 27",
-                createdAt: "2026/11/7",
+                createdAt: creationDate(year: 2026, month: 11, day: 7),
 
                 description: [
                     .zhHans: "顺滑气泡转到对话框",
@@ -179,17 +189,35 @@ struct ContentView: View {
     private var languageCode = AppLanguage.zhHans.rawValue
 
     @State private var selectedWebsite: Website?
+    @State private var searchText = ""
+    @State private var newestFirst = true
+
+    private var filteredDemos: [AnimationDemo] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return demos.filter { demo in
+            query.isEmpty
+                || demo.name.localizedStandardContains(query)
+                || demo.description.values.contains { $0.localizedStandardContains(query) }
+        }
+        .sorted { lhs, rhs in
+            // Keep the catalog order when dates match.
+            guard lhs.createdAt != rhs.createdAt else { return false }
+            return newestFirst ? lhs.createdAt > rhs.createdAt : lhs.createdAt < rhs.createdAt
+        }
+    }
 
     private var language: AppLanguage {
         AppLanguage(rawValue: languageCode) ?? .zhHans
     }
 
     var body: some View {
+        let visibleDemos = filteredDemos
+
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 16) {
 
-                    ForEach(demos) { demo in
+                    ForEach(visibleDemos) { demo in
                         AnimationDemoCard(
                             demo: demo,
                             language: language
@@ -197,14 +225,36 @@ struct ContentView: View {
                             selectedWebsite = Website(url: url)
                         }
                     }
+
+                    Text(verbatim: "1.0.0(20261108)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
                 }
                 .padding()
             }
             .background(
                 Color(uiColor: .systemGroupedBackground)
             )
+            .overlay {
+                if visibleDemos.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
+                }
+            }
             .navigationTitle("Animations")
+            .searchable(text: $searchText, prompt: "Search titles or descriptions")
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Picker("Sort by Date", selection: $newestFirst) {
+                            Text("Newest First").tag(true)
+                            Text("Oldest First").tag(false)
+                        }
+                    } label: {
+                        Label("Sort by Date", systemImage: "arrow.up.arrow.down")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     languageMenu
                 }
@@ -285,7 +335,16 @@ struct AnimationDemoCard: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                        Text(verbatim: demo.createdAt)
+                        Text(
+                            demo.createdAt,
+                            format: Date.FormatStyle(
+                                date: .numeric,
+                                time: .omitted,
+                                locale: Locale(identifier: language.rawValue),
+                                calendar: Calendar(identifier: .gregorian),
+                                timeZone: .gmt
+                            )
+                        )
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                     }
