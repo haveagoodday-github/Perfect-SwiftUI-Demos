@@ -118,7 +118,7 @@ extension AnimationDemo {
                 ),
 
                 githubURL: URL(
-                    string: "https://github.com/JulyKikuAkita/animations/tree/456c2df782b5f9683753ad7fd4d38c073f4f7e4c/View/ThemeSwitcher"
+                    string: "https://github.com/haveagoodday-github/Perfect-SwiftUI-Demos/blob/main/PerfectSwiftUIDemosApp/PerfectSwiftUIDemosApp/Demos/AnimatedAppThemeSwitcherXcode27.swift"
                 ),
 
                 // 按实际资源依赖修改
@@ -152,8 +152,9 @@ extension AnimationDemo {
                     string: "https://www.youtube.com/watch?v=oethb4xWhY8&t=8s"
                 ),
 
-                // 尚未提供该 Demo 的 GitHub 地址
-                githubURL: nil,
+                githubURL: URL(
+                    string: "https://github.com/haveagoodday-github/Perfect-SwiftUI-Demos/blob/main/PerfectSwiftUIDemosApp/PerfectSwiftUIDemosApp/Demos/ChatBubbleTextFieldTransitionUsingSwiftUI.swift"
+                ),
 
                 // 按实际资源依赖修改
                 requiresAssets: false,
